@@ -94,10 +94,10 @@ png(paste("~/Seurat_",name,"_",condition,"_E_score_EMT_score_new_point_byPseudot
 ggplot(data2,aes(x=pseudotime,y=score))+geom_point(alpha=0.5,aes(color=group))+geom_smooth(alpha=1,aes(color=group))
 dev.off()
 
-png(paste("~/Seurat_",name,"_",condition,"_plot_M_E_score_new_byCluster.png",sep=""),res = 600,width=10,height=6,units='in')
+png(paste("~/Seurat_",name,"_",condition,"_plot_EMT_E_score_new_byCluster.png",sep=""),res = 600,width=10,height=6,units='in')
 ggplot(data,aes(x=EMT_score,y=E_score,color=clusters))+geom_point()+geom_abline(intercept = 0,slope = 1, linetype="dotted") #+geom_smooth(aes(x=EMT_score,y=E_score),color="black" )
 dev.off()
 
-png(paste("~/Seurat_",name,"_",condition,"_plot_M_E_score_new_byPseudotime.png",sep=""),res = 600,width=10,height=6,units='in')
+png(paste("~/Seurat_",name,"_",condition,"_plot_EMT_E_score_new_byPseudotime.png",sep=""),res = 600,width=10,height=6,units='in')
 ggplot(data,aes(x=EMT_score,y=E_score,color=pseudotime))+geom_point()+geom_abline(intercept = 0,slope = 1, linetype="dotted")+scale_color_viridis(option = "inferno")
 dev.off()
