@@ -28,7 +28,7 @@ seu=NormalizeData(seu)
 
 #select subset of interest. Here we select treated and untreated epithelial cells:
 
-seu_krt=subset(seu,subset= cell_type =="Epithelial cells" & (seu$group=="DT" | seu$group=="UN") )
+seu_krt=subset(seu,subset= cell_type2 =="Epithelial cells" & (seu$group=="DT" | seu$group=="UN") )
 
 DefaultAssay(seu_krt)="integrated"
 seu_krt=RunPCA(seu_krt,dims = 1:30)
