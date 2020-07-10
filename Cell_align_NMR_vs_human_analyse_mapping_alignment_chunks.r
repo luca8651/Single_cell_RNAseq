@@ -19,18 +19,20 @@ system("module load proj/6.2.1")
 
 #load("/icgc/dkfzlsdf/analysis/B210/Luca/Rstudio/SCT_singleSamples/Monocle3_NMR_Human_Kerat_AllTreat_Allclusters_400ptsnoDoublets_sameClusters_CellAlign_global_2000_VarFeatures.RData")
 
+#This script is run on the pseudotime alignment of naked molerat versus human epithelial cells
 
+#Loop across different runs of CellAlign, with different number of points used to interpolate the data
 for (numPts in c(400,1000) )  { 
 
 load(paste("/icgc/dkfzlsdf/analysis/B210/Luca/Rstudio/SCT_singleSamples/Monocle3_NMR_Human_Kerat_AllTreat_Allclusters_",numPts,"ptsnoDoublets_sameClusters_CellAlign_global_2000_VarFeatures.RData",sep=""))
 
 
+#Load Seurat objects
 seu_nmr=readRDS("/icgc/dkfzlsdf/analysis/B210/Luca/Rstudio/SCT_singleSamples/shared_data/Seurat_nmr_Keratinocytes_noDoublets.rds")
 seu_hsa=readRDS("/icgc/dkfzlsdf/analysis/B210/Luca/Rstudio/SCT_singleSamples/Seurat_human_Keratinocytes_noDoublets.rds")
 
-#saveRDS(seu_hsa,file="/icgc/dkfzlsdf/analysis/B210/Luca/Rstudio/SCT_singleSamples/Seurat_human_Keratinocytes_noDoublets.rds")
-#saveRDS(seu_nmr,file="/icgc/dkfzlsdf/analysis/B210/Luca/Rstudio/SCT_singleSamples/shared_data/Seurat_nmr_Keratinocytes_noDoublets.rds")
-
+  
+#Add cell annotation to the metanode mapping data 
 metaNodePt = mapping$metaNodesPt
 metaNodePt = metaNodePt[order(metaNodePt$ptQuery),]
 metaNodePt$align = 1:nrow(metaNodePt)
@@ -40,11 +42,11 @@ metaNodePtLong = melt(metaNodePt, id.vars = c('align','metaNodeQuery','metaNodeR
 metaNodePtLong[,"variable"]=gsub("ptQuery","NMR_epithelial" ,metaNodePtLong[,"variable"])
 metaNodePtLong[,"variable"]=gsub("ptRef","human_epithelial" ,metaNodePtLong[,"variable"])
 
-typevet=unique(cds2_UN@colData$cell_type_level2)
-typevet2=unique(cds2_DT@colData$cell_type_level2)
+typevet=unique(cds2_UN@colData$cell_type_level2)               #UN-->naked molerat
+typevet2=unique(cds2_DT@colData$cell_type_level2)              #DT-->human
 
 metaNodePtLong$cell_type_nmr=NA
-metaNodePtLong$cell_type_human=NA         #do I need another column?
+metaNodePtLong$cell_type_human=NA         
 
 for (i in 1:length(typevet))  { 
   
@@ -62,9 +64,9 @@ for (i in 1:length(typevet2))  {
   metaNodePtLong$cell_type_human[metaNodePtLong$metaNodeRef%in%x]=typevet2[i]
 }
 
-#In every row I have human and nmr annotation. I mix them based on column "variable":
-metaNodePtLong$cell_type=metaNodePtLong$cell_type_human
 
+#In every row I have human and nmr annotation. I want to combine them:
+metaNodePtLong$cell_type=metaNodePtLong$cell_type_human
 metaNodePtLong$cell_type[metaNodePtLong$variable=="NMR_epithelial"]=metaNodePtLong$cell_type_nmr[metaNodePtLong$variable=="NMR_epithelial"]
 #metaNodePtLong$cell_type=factor(metaNodePtLong$cell_type)
 x=gsub("Spinous/Granular","Spinous/granular",metaNodePtLong$cell_type)
@@ -72,7 +74,7 @@ metaNodePtLong$cell_type=factor(x)
 
 
 
-#########Find chunks of alignments
+#########Find chunks of alignments, where there are changes in the pseudotime expansion-contraction in one species versus the other:
 
 costMat = alignment$localCostMatrix
 costMat = t(apply(costMat,1,function(x){return(as.numeric(x))}))
@@ -80,10 +82,9 @@ linearInd = sub2ind(nrow(costMat), alignment$align[[1]]$index1, alignment$align[
 
 
 coordMat=data.frame(NMR=alignment$align[[1]]$index1,human=alignment$align[[1]]$index2)
-#colnames(coordMat)=c("NMR","human")
 
 
-##find groups:
+##Define groups by identifying direction changes along the dissimilarity matrix (:alignment)
 n1=coordMat[1,1]
 n2=coordMat[1,2]
 cont=1
@@ -117,24 +118,7 @@ if ( same_n1 && coordMat[k,1]!=n1  ) {
   }
 
 
-#which coords correspond to "nodes"?
-#x=c( coordMat[grep("node",coordMat$group),"human"])
-#coordMat[coordMat$human%in%x,]
-#x=c(coordMat[grep("node",coordMat$group),"NMR"])
-
-#for (k in 2:length(coordMat[,1])) { 
-
-# if (coordMat[k-1,1]!=coordMat[k,1] |  coordMat[k-1,2]!=coordMat[k,2] ) {
-   
-#   coordMat[c(k-1,k),"group"]=paste(coordMat[c(k-1,k),"group"],"node",sep="_")
-   
-                              #       } 
-#}
-
-
-metaNodePt = metaNodePt[order(metaNodePt$ptQuery),]       #query is nmr?
-
-
+metaNodePt = metaNodePt[order(metaNodePt$ptQuery),]       #Query is naked molerat
 
 
 run_loop=TRUE
@@ -144,9 +128,6 @@ if (run_loop)  {
 cds2_UN@colData$CellAlign_mapping_groups=""
 cds2_DT@colData$CellAlign_mapping_groups=""
 
-#cell CATCGGGGTCCTGCTT_2 is problematic...
-#There is an issue in the change point: the cells are labelled with multiple group names. I need to 
-#make a decision on how to classify them. Perhaps I keep the first label which is assigned
 
 for (k in 1:length(coordMat[,1])) { 
 
@@ -174,18 +155,16 @@ id_nmr=cds2_UN@colData$CellAlign_mapping_groups[match(cell_nmr,colnames(cds2_UN)
 for (cell in mapping$queryAssign[[cell_nmr]] ) {      
   
   ind_cds=match(cell,colnames(cds2_UN))
-  #if (str_length(cds2_UN@colData[ind_cds,"CellAlign_mapping_groups"])==0 ) {
-  cds2_UN@colData[ind_cds,"CellAlign_mapping_groups"]=id_nmr  #coordMat[k,"group"]
-  #}
+    cds2_UN@colData[ind_cds,"CellAlign_mapping_groups"]=id_nmr  #coordMat[k,"group"]
+ 
  
                                                 }
 
 for (cell in mapping$refAssign[[cell_human]] ) {      
   
   ind_cds=match(cell,colnames(cds2_DT))
-  #if (str_length(cds2_DT@colData[ind_cds,"CellAlign_mapping_groups"])==0 ) {
   cds2_DT@colData[ind_cds,"CellAlign_mapping_groups"]=id_human #coordMat[k,"group"]
-  #}
+ 
                                                }
 
 }
@@ -264,8 +243,6 @@ for (k in 1:length(coordMat[,1])) {
 
 #########3rd version (no if conditions)
 
-
-
 run_loop=TRUE
 
 if (run_loop)  { 
@@ -338,80 +315,6 @@ saveRDS(cds2_UN,file="/icgc/dkfzlsdf/analysis/B210/Luca/Rstudio/SCT_singleSample
 saveRDS(seu_nmr,file="/icgc/dkfzlsdf/analysis/B210/Luca/Rstudio/SCT_singleSamples/shared_data/Seurat_nmr_Keratinocytes_noDoublets.rds")
 saveRDS(seu_hsa,file="/icgc/dkfzlsdf/analysis/B210/Luca/Rstudio/SCT_singleSamples/Seurat_human_Keratinocytes_noDoublets.rds")
 
-plot_cells(cds2_DT,color_cells_by=paste("CellAlign_mapping_groups_",numPts,"randChoice",sep=""), label_leaves=FALSE,label_branch_points=FALSE,cell_size = 1,group_label_size = 5)
-
-col=hue_pal()(11)
-
-#plot_cells(cds2_DT,color_cells_by=paste("CellAlign_mapping_groups_",numPts,"randChoice",sep=""), label_leaves=FALSE,label_branch_points=FALSE,cell_size = 1,group_label_size = 5,label_cell_groups = FALSE)+scale_color_manual(values=col[unique(sort(as.numeric((cds2_DT@colData$CellAlign_mapping_groups_1000randChoice))))])
-#################
-#data2=data.frame(table(cds2_DT@colData$CellAlign_mapping_groups2))
-#data1=data.frame(table(cds2_UN@colData$CellAlign_mapping_groups2))
-#data1$species="hg"
-#data2$species="hs"
-
-#colnames(data2)[1]="alignment_group"
-##colnames(data2)[2]="count"
-#data2$Freq=data2$Freq/sum(data2$Freq)
-
-#colnames(data1)[1]="alignment_group"
-##colnames(data1)[2]="count"
-#data1$Freq=data1$Freq/sum(data1$Freq)
-
-#data3=rbind(data1,data2)
-
-#ggplot(data3,aes(x=species,y=Freq))+geom_bar( stat="identity",aes(fill=alignment_group) )
-
-
-#####
-
-add_groupcols=FALSE 
-
-if (add_groupcols)    {
-  
-typevet=unique(cds2_UN@colData$CellAlign_mapping_groups_1000randChoice)
-typevet2=unique(cds2_DT@colData$CellAlign_mapping_groups_1000randChoice)
-
-metaNodePtLong$group_nmr=NA
-metaNodePtLong$group_human=NA         #do I need another column?
-
-for (i in 1:length(typevet))  { 
-  
-  x <- colnames( cds2_UN[,pData(cds2_UN)$CellAlign_mapping_groups_1000randChoice==typevet[i]] )
-  
-  metaNodePtLong$group_nmr[metaNodePtLong$metaNodeQuery%in%x]=typevet[i]
-  
-}
-
-
-for (i in 1:length(typevet2))  { 
-  
-  x <- colnames( cds2_DT[,pData(cds2_DT)$CellAlign_mapping_groups_1000randChoice==typevet2[i]] )
-  
-  metaNodePtLong$group_human[metaNodePtLong$metaNodeRef%in%x]=typevet2[i]
-}
-
-
-   }
-
-
-
-metaNodePt$group=coordMat$group
-
-metaNodePtLong$group=""
-
-for (j in 1:max(coordMat$group) ) { 
-  
-ind=coordMat$group==j
-ind=grep("TRUE",ind)
-  
-metaNodePtLong$group[metaNodePtLong$align%in%ind]=j 
-  
-  }
-
-
-ggplot(metaNodePtLong[metaNodePtLong$variable!="diff",], aes(x = variable, y = value, group = align)) + geom_line(aes(color=group)) + theme_bw() +
-geom_point(aes(color=group)) +
-coord_flip() + ggtitle('Global alignment of human and nmr pseudotime')+theme(plot.title = element_text(hjust = 0.5) )
 
 
 
