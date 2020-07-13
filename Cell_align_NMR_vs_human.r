@@ -22,13 +22,8 @@ setwd("/icgc/dkfzlsdf/analysis/B210/Luca/Rstudio/SCT_singleSamples/")
 #The value of this variable determines whether to exclude proliferative basal or not
 name="AllTreat_Allclusters_noProlif"
 
-##IMPORTANT: labels "DT" and "UN" do not refer to treatment but to the different datasets:
+##IMPORTANT: labels "DT" and "UN" in the variable names refer to the different datasets:
 ##query is labelled as UN, ref is labelled as DT
-
-#query is cds2_UN (NMR)
-#ref is cds2_DT (human)
-
-#cds2_UN=readRDS(file = "/icgc/dkfzlsdf/analysis/B210/Luca/Rstudio/SCT_singleSamples/monocle3/Monocle3_NMR_Kerat_noDoublets_sameClusters_removed3Clusters_UN_sce.rds" )
 
 
 cds2_UN=readRDS("/icgc/dkfzlsdf/analysis/B210/Luca/Rstudio/SCT_singleSamples/monocle3/AllTreat/Monocle3_NMR_Kerat_noDoublets_sameClusters_allTreatmentsUMAP_UN_sce.rds")
