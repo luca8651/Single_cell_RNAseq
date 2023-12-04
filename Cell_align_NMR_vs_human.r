@@ -22,9 +22,8 @@ setwd("/icgc/dkfzlsdf/analysis/B210/Luca/Rstudio/SCT_singleSamples/")
 #The value of this variable determines whether to exclude proliferative basal or not
 name="AllTreat_Allclusters_noProlif"
 
-##IMPORTANT: labels "DT" and "UN" in the variable names refer to the different datasets:
-##query is labelled as UN, ref is labelled as DT
-
+#labels "DT" and "UN" in the variable names refer to the different datasets:
+#query is labelled as UN, ref is labelled as DT
 
 cds2_UN=readRDS("/icgc/dkfzlsdf/analysis/B210/Luca/Rstudio/SCT_singleSamples/monocle3/AllTreat/Monocle3_NMR_Kerat_noDoublets_sameClusters_allTreatmentsUMAP_UN_sce.rds")
 
@@ -45,25 +44,16 @@ expLocalDT=data.frame(logcounts(cds2_DT))
 ##Remove naming differences between datasets and exclude specific lines (the alignment will run on highly variable genes only)
 
 row.names(expGlobalUN)=gsub("^MITO-", "MT-", row.names(expGlobalUN))
-expGlobalUN=expGlobalUN[row.names(expGlobalUN)!="AK6",]
-row.names(expGlobalUN)=chartr("abcdefghijklmnopqrstuvwxyz", "ABCDEFGHIJKLMNOPQRSTUVWXYZ", row.names(expGlobalUN))
 
-expGlobalDT=expGlobalDT[row.names(expGlobalDT)%in%c("C15ORF37", "C1ORF220", "C2ORF15", "C6ORF165")==FALSE,]
+row.names(expGlobalUN)=chartr("abcdefghijklmnopqrstuvwxyz", "ABCDEFGHIJKLMNOPQRSTUVWXYZ", row.names(expGlobalUN))
 row.names(expGlobalDT)=chartr("abcdefghijklmnopqrstuvwxyz", "ABCDEFGHIJKLMNOPQRSTUVWXYZ", row.names(expGlobalDT))
 
-expLocalUN=expLocalUN[row.names(expLocalUN)!="AK6",]
 row.names(expLocalUN)=gsub("^MITO-", "MT-", row.names(expLocalUN))
 row.names(expLocalUN)=chartr("abcdefghijklmnopqrstuvwxyz", "ABCDEFGHIJKLMNOPQRSTUVWXYZ", row.names(expLocalUN))
-
-expLocalDT=expLocalDT[row.names(expLocalDT)%in%c("C15ORF37", "C1ORF220", "C2ORF15", "C6ORF165")==FALSE,]
 row.names(expLocalDT)=chartr("abcdefghijklmnopqrstuvwxyz", "ABCDEFGHIJKLMNOPQRSTUVWXYZ", row.names(expLocalDT))
-
-
 
 trajDT=pseudotime(cds2_DT)
 trajUN=pseudotime(cds2_UN)
-
-
 
 trajDT = as.numeric(trajDT)
 names(trajDT) = colnames(expGlobalDT)
@@ -99,19 +89,10 @@ genes=unique(c(genes,genes2))
 genes=chartr("abcdefghijklmnopqrstuvwxyz", "ABCDEFGHIJKLMNOPQRSTUVWXYZ", genes)
 
 
-expGlobalDT=expGlobalDT[ genes, ]     #row.names(expGlobalDT)%in%genes
+expGlobalDT=expGlobalDT[ genes, ]     
 expGlobalUN=expGlobalUN[ genes, ]
 expLocalDT=expLocalDT[ genes, ]
 expLocalUN=expLocalUN[ genes, ]
-
-#x=colnames(cds2_DT)[cds2_DT@colData$cell_type_level2=="Granular"]
-#x2=colnames(cds2_UN)[cds2_UN@colData$cell_type_level2=="Granular"]
-#trajUN=trajUN[names(trajUN)%in%x2]
-#trajDT=trajDT[names(trajDT)%in%x]
-#expGlobalDT=expGlobalDT[ genes, x]     #row.names(expGlobalDT)%in%genes
-#expGlobalUN=expGlobalUN[ genes, x2]
-#expLocalDT=expLocalDT[ genes, x]
-#expLocalUN=expLocalUN[ genes, x2]
 
 numPts = 200
 interGlobalDT = cellAlign::interWeights(expDataBatch = expGlobalDT, trajCond = trajDT,
@@ -171,8 +152,8 @@ rm(seu)
 
 save.image(paste("Monocle3_NMR_Human_Kerat_",name,"noDoublets_sameClusters_CellAlign_global_",geneset,".RData",sep=""))
 
-#######################################################################################
-#########local alignment:
+
+#####local alignment:
 
 local=FALSE
 
@@ -220,17 +201,9 @@ text(125,.3,"red points are conserved")
 rm(cds2_UN)
 rm(cds2_DT)
 
-#save.image("icgc/dkfzlsdf/analysis/B210/Luca/Rstudio/SCT_singleSamples/Cell_alignment_NMR.RData")
-
 data=data.frame(index1=alignment$align[[1]]$index1,index2=alignment$align[[1]]$index2)
 
 
-#mapping of cells (DT is ref)
-#mapping$refAssign
-
-#golbal align trajectory?
-#interScaledGlobalDT$traj
-#alignment$align
 plot_data=FALSE
 
 #cds2_UN=readRDS(file = "/icgc/dkfzlsdf/analysis/B210/Luca/Rstudio/SCT_singleSamples/Monocle3_NMR_Kerat_noDoublets_sameClusters_removed3Clusters_UN_sce.rds" )
@@ -276,7 +249,7 @@ if (plot_data==TRUE)  {
   metaNodePtLong$cell_type=metaNodePtLong$cell_type_human
   
   metaNodePtLong$cell_type[metaNodePtLong$variable=="NMR_epithelial"]=metaNodePtLong$cell_type_nmr[metaNodePtLong$variable=="NMR_epithelial"]
-  #metaNodePtLong$cell_type=factor(metaNodePtLong$cell_type)
+  
   x=gsub("Spinous/Granular","Spinous/granular",metaNodePtLong$cell_type)
   metaNodePtLong$cell_type=factor(x)
   
@@ -396,16 +369,4 @@ dev.off()
   
   
   }
-
-
-##looks like nmr corresponds to index1?  Then I need to swap annot columns in heatmap
-#data=data.frame(index1=alignment$align[[1]]$index1,index2=alignment$align[[1]]$index2)
-#ggplot(data,aes(x=index1,y=index2,color=index1))+geom_point()+scale_color_viridis(option="magma")+scale_y_continuous(trans = "reverse")
-
-
-
-
-
-
-
 
