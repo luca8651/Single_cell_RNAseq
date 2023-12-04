@@ -170,7 +170,6 @@ for (cell in mapping$refAssign[[cell_human]] ) {
 }
 
 
-
 cds2_UN@colData[,paste("CellAlign_mapping_groups_",numPts,"randChoice",sep="")]=cds2_UN@colData$CellAlign_mapping_groups
 cds2_DT@colData[,paste("CellAlign_mapping_groups_",numPts,"randChoice",sep="")]=cds2_DT@colData$CellAlign_mapping_groups
 
@@ -194,54 +193,7 @@ dev.off()
 
 
 
-####2nd version:
-run_loop=FALSE
-
-if (run_loop)  { 
-
-cds2_UN@colData$CellAlign_mapping_groups=""
-cds2_DT@colData$CellAlign_mapping_groups=""
-
-for (k in 1:length(coordMat[,1])) { 
-  
-  cat("working on step",k," \n")
-  cell_nmr=as.character(metaNodePt[k,"metaNodeQuery"])
-  cell_human=as.character(metaNodePt[k,"metaNodeRef"])
-  
-  #do not overwrite names with "node" label
-  if (length(grep("node",cds2_UN@colData$CellAlign_mapping_groups[match(cell_nmr,colnames(cds2_UN)) ]))==0 ) { 
-    cds2_UN@colData$CellAlign_mapping_groups[match(cell_nmr,colnames(cds2_UN)) ]=coordMat[k,"group"]
-  }
-  
-  if ( length(grep("node",cds2_DT@colData$CellAlign_mapping_groups[match(cell_human,colnames(cds2_DT)) ]))==0 ) { 
-    
-    cds2_DT@colData$CellAlign_mapping_groups[match(cell_human,colnames(cds2_DT)) ]=coordMat[k,"group"]
-  }
-  
-  for (cell in mapping$queryAssign[[cell_nmr]] ) {      
-    
-    ind_cds=match(cell,colnames(cds2_UN))
-    id=gsub("node_","",coordMat[k,"group"])                          #I do not want these cells to be labeled as nodes
-    if ( length(grep("node",cds2_UN@colData[ind_cds,"CellAlign_mapping_groups"]))==0 ) {
-      cds2_UN@colData[ind_cds,"CellAlign_mapping_groups"]=id #coordMat[k,"group"]
-    }
-  }
-  
-  for (cell in mapping$refAssign[[cell_human]] ) {      
-    
-    ind_cds=match(cell,colnames(cds2_DT))
-    id=gsub("node_","",coordMat[k,"group"])
-    if ( length(grep("node",cds2_DT@colData[ind_cds,"CellAlign_mapping_groups"]))==0 ) {
-      cds2_DT@colData[ind_cds,"CellAlign_mapping_groups"]=id #coordMat[k,"group"]
-    }
-  }
-  
-}
-
-}
-
-
-#########3rd version (no if conditions)
+#########Alternative chunk assignment (no if conditions)
 
 run_loop=TRUE
 
@@ -251,41 +203,33 @@ if (run_loop)  {
   cds2_DT@colData$CellAlign_mapping_groups=""
   
   #cell CATCGGGGTCCTGCTT_2 is problematic...
-  #There is an issue in the change point: the cells are labelled with multiple group names. I need to 
-  #make a decision on how to classify them. Perhaps I keep the first label which is assigned
+  #There is an issue in the change point: the cells are labelled with multiple group names. keeping the first label which is assigned
   
   for (k in 1:length(coordMat[,1])) { 
     
     cat("working on step",k," \n")
     cell_nmr=as.character(metaNodePt[k,"metaNodeQuery"])
     cell_human=as.character(metaNodePt[k,"metaNodeRef"])
-    
-    #if (str_length(cds2_UN@colData$CellAlign_mapping_groups[match(cell_nmr,colnames(cds2_UN)) ])==0 ) { 
+  
       cds2_UN@colData$CellAlign_mapping_groups[match(cell_nmr,colnames(cds2_UN)) ]=coordMat[k,"group"]
-    #}
     
-    #if (str_length(cds2_DT@colData$CellAlign_mapping_groups[match(cell_human,colnames(cds2_DT)) ])==0 ) { 
       cds2_DT@colData$CellAlign_mapping_groups[match(cell_human,colnames(cds2_DT)) ]=coordMat[k,"group"]
-    #}
     
     for (cell in mapping$queryAssign[[cell_nmr]] ) {      
       
       ind_cds=match(cell,colnames(cds2_UN))
-      #if (str_length(cds2_UN@colData[ind_cds,"CellAlign_mapping_groups"])==0 ) {
-        cds2_UN@colData[ind_cds,"CellAlign_mapping_groups"]=coordMat[k,"group"]
-      #}
+      
+      cds2_UN@colData[ind_cds,"CellAlign_mapping_groups"]=coordMat[k,"group"]
+      
     }
     
     for (cell in mapping$refAssign[[cell_human]] ) {      
       
       ind_cds=match(cell,colnames(cds2_DT))
-      #if (str_length(cds2_DT@colData[ind_cds,"CellAlign_mapping_groups"])==0 ) {
         cds2_DT@colData[ind_cds,"CellAlign_mapping_groups"]=coordMat[k,"group"]
-      #}
     }
     
   }
-  
   
   cds2_UN@colData[,paste("CellAlign_mapping_groups_",numPts,"lastChoice",sep="")]=cds2_UN@colData$CellAlign_mapping_groups
   cds2_DT@colData[,paste("CellAlign_mapping_groups_",numPts,"lastChoice",sep="")]=cds2_DT@colData$CellAlign_mapping_groups
@@ -301,12 +245,8 @@ if (run_loop)  {
   x=labels(seu_nmr$orig.ident)
   y=colnames(cds2_UN)
   seu_nmr@meta.data[x%in%y,paste("CellAlign_mapping_groups_",numPts,"lastChoice",sep="")]=cds2_UN@colData[,paste("CellAlign_mapping_groups_",numPts,"lastChoice",sep="")]
-  
-  
-  
+   
 }
-
-
 
 }
 
